@@ -1,0 +1,102 @@
+<div class="forms-mat-elevation-z8 scpGridContainer">
+    <div class="export-container">
+        <!--<mat-icon *ngIf="manageColumns" [title]="'ManageColumn.Header'| translate" #columnManagementTrigger="matMenuTrigger" [matMenuTriggerFor]="columnManagementMenu">table_chart</mat-icon>-->
+        <div *ngIf="exportToExcel" class="excel" [title]="'App.ExcelExport'| translate" (click)="exportArray()"></div>
+        <span *ngIf="gridActions" class="gridFilterItemList">
+            <span *ngIf="!displayNoRecords" class="gridActionInfoIcon" [ngClass]="{'gridActionDisbled': !selection || !selection.selected || selection.selected.length == 0 }" (click)="onDeleteSelected()">
+                <mat-icon>delete</mat-icon> <span class="gridActionIconText">{{'App.DeleteSelected' | translate}}</span>
+            </span>
+        </span>
+    </div>
+    <div class="tb-paginator">
+        <div class="tb-button">
+            <button *ngIf="btnCreateNew" class="buttonsecondary" (click)="createNewForm()" [disabled]="disableAddNewButton">{{btnCreateNew}} <mat-icon class="plus-icon">add</mat-icon></button>
+        </div>
+        <div class="proof-button">
+            <button *ngIf="btnCreateNewProof" class="buttonsecondary" (click)="CreateNewProof()" [disabled]="disableAddNewButton">{{btnCreateNewProof}} <mat-icon class="print-icon">print</mat-icon></button>
+        </div>
+        <mat-paginator *ngIf="showPageSizeOption" [ngClass]="{'displayNone': child}" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPaginateChange($event)" showFirstLastButtons="false"></mat-paginator>
+    </div>
+    <div *ngIf="displayedColumns && displayedColumns.length > 0" class="tblextentwidth" [ngClass]="{'tbl-child': child}">
+        <table id="{{gridId}}" mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)" matSortActive={{activeSortColumn?.columnName}} matSortDirection="desc" matSortDisableClear filltable class="formtable tableHeader">
+            <tr>
+                <ng-container *ngIf="checkBoxColumm" matColumnDef="checkbox">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox (click)="$event.stopPropagation()" (change)="checkBoxToggle(row)" [checked]="selection.isSelected(row)" [disabled]="row.hideCheckBox"></mat-checkbox>
+                    </td>
+                </ng-container>
+                <ng-container *ngIf="showIconColumn" matColumnDef="statusIcon">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <mat-form-field *ngIf="filterStatus">
+                            <mat-icon *ngIf="!statusFiltered" class="searchStatus" [matMenuTriggerFor]="statusMenu">search</mat-icon>
+                            <mat-icon *ngIf="statusFiltered" class="searchStatus" [matMenuTriggerFor]="statusMenu">filter_list</mat-icon>
+                            <input matInput style="display:none">
+                            <mat-menu #statusMenu="matMenu" backdropClass="statusMenu">
+                                <button *ngFor="let opt of statusList.options" (click)="onStatusFilter(opt.code)" mat-menu-item>{{opt.display}}</button>
+                            </mat-menu>
+                        </mat-form-field>
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-icon [ngClass]="{'documentAppovedicon':row.statusIcon == 'Green','documentDueIcon':row.statusIcon == 'Red'
+                                  ,'documentWaitingApprovalIcon':row.statusIcon == 'Yellow','noColorIcon':row.statusIcon == 'NoColor'}">{{row.iconName}}</mat-icon>
+                    </td>
+                </ng-container>
+                <ng-container *ngFor="let column of columns; trackBy: trackByFn; let i = index;">
+                    <ng-container *ngIf="column.name != 'checkbox' && column.name != 'statusIcon'" matColumnDef={{column.name}}>
+                        <th mat-header-cell *matHeaderCellDef [ngStyle]="{'width': column.width}" [resizeColumn]="true" [index]="i">
+                            <span mat-sort-header></span>
+                            <mat-label class="columnLabel">{{column.display}}</mat-label>
+                        </th>
+                        <td mat-cell *matCellDef="let row">
+                            <a class="columnLink" *ngIf="column.type == 'T' && !column.editable && column.clickable && !row?.viewDisabled" (click)="rowSingleClick(row)">{{row[column.name]}}</a>
+                            <span *ngIf="column.type == 'T'  && !column.editable && (!column.clickable || (column.clickable && row?.viewDisabled))">{{row[column.name]}}</span>
+                            <span *ngIf="column.type == 'NUMBER' && !column.editable">{{row[column.name]}}</span>
+                            <span *ngIf="column.type == 'DATETIME'">{{row[column.name] | customdate: 'isoFormatDateTime'}}</span>
+                            <span *ngIf="column.type == 'DATE'">{{row[column.name] | customdate: 'isoFormatDate'}}</span>
+                            <span *ngIf="column.type == 'STATUS'" [ngClass]="{'approvedStatus': row[column.name] == 'Approved','rejectedStatus': row[column.name] == 'Rejected', 'pendingStatus':row[column.name] == 'Pending',
+     'draftStatus': row[column.name] == 'Draft', 'correctionStatus': row[column.name] == 'Correction'}">
+                                <ng-container *ngIf="row[column.name] === 'Approved'">{{'Contracts.Approved' | translate}}</ng-container>
+                                <ng-container *ngIf="row[column.name] === 'Rejected'">{{'Contracts.Terminated' | translate}}</ng-container>
+                                <ng-container *ngIf="row[column.name] === 'Pending'">{{'Contracts.Pending' | translate}}</ng-container>
+                                <ng-container *ngIf="row[column.name] === 'Draft'">{{'Contracts.Draft' | translate}}</ng-container>
+                                <ng-container *ngIf="row[column.name] === 'Correction'">{{'Contracts.Correction' | translate}}</ng-container>
+                            </span>
+
+                            <input class="gridInlineEditInput" *ngIf="column.type == 'NUMBER' && column.editable" type="number" step="0.01" [value]="row[column.name]" [(ngModel)]="row[column.name]" (blur)="editRowInline(row)">
+                        </td>
+                    </ng-container>
+                </ng-container>
+                <ng-container *ngIf="actionColumn" matColumnDef="actions" [sticky]="!displayNoRecords">
+                    <th mat-header-cell *matHeaderCellDef class="actions">
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-icon *ngIf="!row.actionDisabled" class="contextIcon" (click)="onContextMenu($event, row)">more_verti</mat-icon>
+                    </td>
+                </ng-container>
+            </tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky:true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" [ngClass]="{'changeRowColourToRed': row.changeRowColor}"></tr>
+        </table>
+        <div #actionTrigger="matMenuTrigger" style="visibility: hidden; position: fixed"
+             [style.left]="contextMenuPosition.x"
+             [style.top]="contextMenuPosition.y"
+             [matMenuTriggerFor]="contextMenu">
+        </div>
+        <mat-menu #contextMenu="matMenu">
+            <ng-template matMenuContent let-row="row">
+                <button *ngFor="let contextMenuItem of contextMenuItems" mat-menu-item (click)="contextMenuAction(contextMenuItem.name, row)">
+                    <mat-icon>{{contextMenuItem.icon}}</mat-icon>
+                    {{contextMenuItem.label}}
+                </button>
+            </ng-template>
+        </mat-menu>
+        <div class="noRecords" *ngIf="(!dataSource || (dataSource  && dataSource.data && dataSource.data.length === 0)) || displayNoRecords">{{'Admin.NoRecords' | translate}}</div>
+    </div>
+
+    <mat-menu id="gridColumnManagementMenu" class="relativePosition" #columnManagementMenu="matMenu" [hasBackdrop]="true">
+        <ngx-spinner name="MANAGECOLUMNSSPINNER" size="default" color="#3e4f5a" bdColor="white" [fullScreen]="false" type="line-spin-clockwise-fade"></ngx-spinner>
+        <app-sccolumn-configuration *ngIf="columns && columns.length > 0" [columns]="columns" [saveColumnDefinition]="saveColumnDefinition" (close)="closeConfiguration($event)" (changeColumnConfig)="onChangeColumnConfig($event)"></app-sccolumn-configuration>
+    </mat-menu>
+</div>
+<ngx-spinner name="GRIDSPINNER" size="default" color="#3e4f5a" bdColor="white" [fullScreen]="false" type="line-spin-clockwise-fade"></ngx-spinner>
