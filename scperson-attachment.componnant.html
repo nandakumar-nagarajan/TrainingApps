@@ -1,0 +1,60 @@
+Commit f5f71f02cdc362605f2687a568cae4f6d406973e
+Author: Nandakumar Nagarajan <nandakumar.nagarajan@cgi.com>
+Date: Friday, July 19, 2024 11:09 AM
+Parent: 03e9f2ec
+
+Added intial checkin
+
+<div class="gridView">
+    <app-scgrid [gridId]="gridId"
+                [columns]="columns"
+                [dataRows]="dataRows"
+                [actionColumn]="true"
+                [contextMenuItems]="contextMenuItems"
+                (onContextMenuClick)="contextMenuClick($event)"
+                [showPageSizeOption]="false"
+                [btnCreateNew]="('Contracts.AddNewAttachment' | translate)"
+                (onSingleClick)="downloadAttachment($event);"
+                (onCreateNew)="openModal(UploadAttaachments)">
+    </app-scgrid>
+</div>
+
+<ng-template #UploadAttaachments>
+    <div class="container container-Layout">
+        <h1 mat-dialog-title class="header-style"> {{'PersonList.AddAttachments' | translate}} </h1>
+        <div class="" mat-dialog-content>
+            <div class="contentBody">
+                <div class="row">
+                    <div class="file-input-wrapper" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+                        <input type="file" (change)="onFileChange($event)" hidden #fileInput>
+                        <button mat-button (click)="fileInput.click()" class="buttonsecondary">{{'Form.Browse'| translate}}</button>
+                        <span *ngIf="!newAttachment.fileName">{{'Form.DragFile'| translate}}</span>
+                        <span *ngIf="newAttachment.fileName">{{ newAttachment.fileName }}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="divFieldLabel">
+                        <label class="inputLabel">{{'Form.AttachmentFieldDescription' | translate}}</label>
+                    </div>
+                    <div class="divField">
+                        <input type="text" [(ngModel)]="newAttachment.fileDescription" (onchange)="validateDescription($event)" autocomplete="off" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="divFieldLabel">
+                        <label class="inputLabel">{{'Form.AttachmentFieldDate' | translate}}</label>
+                    </div>
+                    <div class="divField">
+                        <app-scdatepicker [field]="{id:'fileDate', name:'fileDate', value:null}" (valueChange)="datePickerChange($event)" [(ngModel)]="newAttachment.fileDate" ></app-scdatepicker>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div mat-dialog-actions>
+            <div class="div-buttons-right">
+                <input type="button" class="BUTTON dialog-button" mat-dialog-close [value]="'Form.AttachmentCancel' | translate" (click)="clearFile()" />
+                <input type="submit" class="BUTTON dialog-button save-btn" [value]="'Form.AttachmentSave' | translate" (click)="submitFileData()" />
+            </div>
+        </div>
+    </div>
+</ng-template>
